@@ -15,7 +15,7 @@ public class AuthOperation extends Operation {
 
     @Override
     public OperationResult execute() {
-        if("admin".equals(this.userName)){
+        if("admin1".equals(this.userName)){
             return new AuthOperationResult(true);
         }
         return new AuthOperationResult(false);
