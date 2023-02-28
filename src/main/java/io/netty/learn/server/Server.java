@@ -14,6 +14,7 @@ import io.netty.learn.server.codec.OrderFrameEncoder;
 import io.netty.learn.server.codec.OrderProtocolDecoder;
 import io.netty.learn.server.codec.OrderProtocolEncoder;
 import io.netty.learn.server.codec.handler.OrderServerProcessHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.util.concurrent.ExecutionException;
 
@@ -24,16 +25,20 @@ public class Server {
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
                 .handler(new LoggingHandler(LogLevel.INFO))
-                .group(new NioEventLoopGroup())
+                //完善线程名方便调试
+                .group(new NioEventLoopGroup(0,new DefaultThreadFactory("boss")),
+                        new NioEventLoopGroup(0,new DefaultThreadFactory("worker ")))
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
-                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                    protected void initChannel(NioSocketChannel nioSocketChannel) {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
-                        pipeline.addLast(new OrderFrameDecoder())
+                        //完善handler名称方便调试
+                        pipeline.addLast(new LoggingHandler(LogLevel.DEBUG))
+                                .addLast("frameDecoder",new OrderFrameDecoder())
                                 .addLast(new OrderFrameEncoder())
                                 .addLast(new OrderProtocolEncoder())
                                 .addLast(new OrderProtocolDecoder())
-                                .addLast(new LoggingHandler(LogLevel.INFO))
+
                                 .addLast(new OrderServerProcessHandler());
                     }
                 });

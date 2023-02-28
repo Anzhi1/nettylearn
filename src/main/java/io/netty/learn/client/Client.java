@@ -3,6 +3,7 @@ package io.netty.learn.client;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -24,10 +25,12 @@ public class Client {
     public static void main (String[] args) throws ExecutionException, InterruptedException {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class)
+                //设置超时时间
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,10*1000)
                 .group(new NioEventLoopGroup())
                 .handler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
-                    protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
+                    protected void initChannel(NioSocketChannel nioSocketChannel)  {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
                         pipeline.addLast(new OrderFrameDecoder())
                                 .addLast(new OrderFrameEncoder())
