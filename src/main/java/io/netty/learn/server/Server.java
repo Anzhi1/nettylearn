@@ -13,6 +13,7 @@ import io.netty.learn.server.codec.OrderFrameDecoder;
 import io.netty.learn.server.codec.OrderFrameEncoder;
 import io.netty.learn.server.codec.OrderProtocolDecoder;
 import io.netty.learn.server.codec.OrderProtocolEncoder;
+import io.netty.learn.server.codec.handler.MetricHandler;
 import io.netty.learn.server.codec.handler.OrderServerProcessHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
@@ -21,6 +22,9 @@ import java.util.concurrent.ExecutionException;
 public class Server {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
+
+        //可以共享的Handler metricHandler
+        MetricHandler metricHandler = new MetricHandler();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
@@ -35,9 +39,10 @@ public class Server {
                         //完善handler名称方便调试
                         pipeline.addLast(new LoggingHandler(LogLevel.DEBUG))
                                 .addLast("frameDecoder",new OrderFrameDecoder())
-                                .addLast(new OrderFrameEncoder())
-                                .addLast(new OrderProtocolEncoder())
-                                .addLast(new OrderProtocolDecoder())
+                                .addLast("frameEncoder",new OrderFrameEncoder())
+                                .addLast("orderProtocolEncoder",new OrderProtocolEncoder())
+                                .addLast("orderProtocolDecoder",new OrderProtocolDecoder())
+                                .addLast("metricsHandler",metricHandler)
 
                                 .addLast(new OrderServerProcessHandler());
                     }
