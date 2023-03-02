@@ -16,9 +16,11 @@ import io.netty.learn.client.codec.OrderProtocolDecoder;
 import io.netty.learn.client.codec.OrderProtocolEncoder;
 import io.netty.learn.common.RequestMessage;
 import io.netty.learn.util.IdUtil;
+import io.netty.util.internal.UnstableApi;
 
 import java.util.concurrent.ExecutionException;
 
+@UnstableApi
 public class Client {
 
     //客户端不区分Handler与childHandler，只有普通的Handler
@@ -44,6 +46,10 @@ public class Client {
         channelFuture.sync();
         RequestMessage requestMessage = new RequestMessage(IdUtil.nextId(),new OrderOperation(1001,"tudou"));
         //future是异步执行的
+        //用于测试内存泄露，但失败。
+        for(int i=0;i<10;i++){
+            channelFuture.channel().writeAndFlush(requestMessage);
+        }
         channelFuture.channel().writeAndFlush(requestMessage);
 
         channelFuture.channel().closeFuture().get();

@@ -16,8 +16,10 @@ import io.netty.learn.server.codec.OrderProtocolEncoder;
 import io.netty.learn.server.codec.handler.MetricHandler;
 import io.netty.learn.server.codec.handler.OrderServerProcessHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
+import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
 import java.util.concurrent.ExecutionException;
+import java.util.zip.DataFormatException;
 
 public class Server {
 
@@ -25,6 +27,10 @@ public class Server {
 
         //可以共享的Handler metricHandler
         MetricHandler metricHandler = new MetricHandler();
+        //定义线程池
+        UnorderedThreadPoolEventExecutor businessThreadPool = new UnorderedThreadPoolEventExecutor(10,new DefaultThreadFactory("business"));
+        NioEventLoopGroup businessThreadPool2 = new NioEventLoopGroup(0,new DefaultThreadFactory("business2"));
+        //为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
@@ -44,7 +50,8 @@ public class Server {
                                 .addLast("orderProtocolDecoder",new OrderProtocolDecoder())
                                 .addLast("metricsHandler",metricHandler)
 
-                                .addLast(new OrderServerProcessHandler());
+                                //业务处理handler,可能会很耗时,使用线程池来处理
+                                .addLast(businessThreadPool,new OrderServerProcessHandler());
                     }
                 });
         ChannelFuture channelFuture = serverBootstrap.bind(8090).sync();

@@ -2,11 +2,17 @@ package io.netty.learn.business.order;
 
 import io.netty.learn.common.Operation;
 import io.netty.learn.common.OperationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 public class OrderOperation extends Operation {
 
     private int tableId;
     private String dish;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderOperation.class);
 
     public OrderOperation(int tableId, String dish) {
         this.tableId = tableId;
@@ -15,9 +21,10 @@ public class OrderOperation extends Operation {
 
     @Override
     public OperationResult execute() {
-        System.out.println("order's executing startup with orderRequest: " + toString());
+        log.info("order's executing startup with orderRequest: ");
         //execute order logic
-        System.out.println("order's executing complete");
+        log.info("order's executing complete");
+
         return new OrderOperationResult(tableId,dish,true);
     }
 
