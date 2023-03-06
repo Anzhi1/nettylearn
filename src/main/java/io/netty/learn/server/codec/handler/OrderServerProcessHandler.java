@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 //为什么继承SimpleChannelInboundHandler而不是继承ChannelInboundHandler？  Simple帮我们自动释放Bytebuf
 public class OrderServerProcessHandler extends SimpleChannelInboundHandler<RequestMessage> {
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, RequestMessage requestMessage) throws Exception {
+    public void channelRead0(ChannelHandlerContext ctx, RequestMessage requestMessage){
 
      //   ByteBuf buffer = ctx.alloc().buffer();  用于测试内存泄漏检测，但失败。
         Operation operation = requestMessage.getMessageBody();
@@ -27,6 +27,7 @@ public class OrderServerProcessHandler extends SimpleChannelInboundHandler<Reque
         //停3s,用于模拟业务处理耗时
         Uninterruptibles.sleepUninterruptibly(3, TimeUnit.SECONDS);
 
+        //加急式，每次写都flush
         ctx.writeAndFlush(responseMessage);
     }
 }

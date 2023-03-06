@@ -7,8 +7,10 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.learn.server.codec.OrderFrameDecoder;
 import io.netty.learn.server.codec.OrderFrameEncoder;
 import io.netty.learn.server.codec.OrderProtocolDecoder;
@@ -19,7 +21,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
 import java.util.concurrent.ExecutionException;
-import java.util.zip.DataFormatException;
+
 
 public class Server {
 
@@ -30,6 +32,8 @@ public class Server {
         //定义线程池
         UnorderedThreadPoolEventExecutor businessThreadPool = new UnorderedThreadPoolEventExecutor(10,new DefaultThreadFactory("business"));
         NioEventLoopGroup businessThreadPool2 = new NioEventLoopGroup(0,new DefaultThreadFactory("business2"));
+        GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(new NioEventLoopGroup(),100*1024*1024,100*1024*1024);
+
         //为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
@@ -44,11 +48,15 @@ public class Server {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
                         //完善handler名称方便调试
                         pipeline.addLast(new LoggingHandler(LogLevel.DEBUG))
+                                //限流套件
+                                .addLast("shapingHandler",globalTrafficShapingHandler)
                                 .addLast("frameDecoder",new OrderFrameDecoder())
                                 .addLast("frameEncoder",new OrderFrameEncoder())
                                 .addLast("orderProtocolEncoder",new OrderProtocolEncoder())
                                 .addLast("orderProtocolDecoder",new OrderProtocolDecoder())
                                 .addLast("metricsHandler",metricHandler)
+                                //牺牲一定的延迟，增加了系统的吞吐量，使用netty自带的FlushConsolidationHandler
+                                .addLast("flushEnhance",new FlushConsolidationHandler(5,true))
 
                                 //业务处理handler,可能会很耗时,使用线程池来处理
                                 .addLast(businessThreadPool,new OrderServerProcessHandler());
