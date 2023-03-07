@@ -10,6 +10,8 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.learn.business.order.OrderOperation;
 import io.netty.learn.client.codec.*;
+import io.netty.learn.client.codec.dispatcher.ClientIdleCheckHandler;
+import io.netty.learn.client.codec.dispatcher.KeepAliveHandler;
 import io.netty.learn.common.RequestMessage;
 import io.netty.learn.util.IdUtil;
 
@@ -25,10 +27,12 @@ public class ClientV1 {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
-                        pipeline.addLast(new OrderFrameDecoder())
+                        pipeline.addLast(new ClientIdleCheckHandler())
+                                .addLast(new OrderFrameDecoder())
                                 .addLast(new OrderFrameEncoder())
                                 .addLast(new OrderProtocolEncoder())
                                 .addLast(new OrderProtocolDecoder())
+                                .addLast("keepAlive",new KeepAliveHandler())
                                 .addLast(new OperationToRequestMessageEncoder())
                                 .addLast(new LoggingHandler(LogLevel.INFO));
                     }

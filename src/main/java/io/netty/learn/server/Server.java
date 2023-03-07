@@ -17,6 +17,7 @@ import io.netty.learn.server.codec.OrderProtocolDecoder;
 import io.netty.learn.server.codec.OrderProtocolEncoder;
 import io.netty.learn.server.codec.handler.MetricHandler;
 import io.netty.learn.server.codec.handler.OrderServerProcessHandler;
+import io.netty.learn.server.codec.handler.ServerIdleCheckHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 
@@ -41,22 +42,24 @@ public class Server {
                 .handler(new LoggingHandler(LogLevel.INFO))
                 //完善线程名方便调试
                 .group(new NioEventLoopGroup(0,new DefaultThreadFactory("boss")),
-                        new NioEventLoopGroup(0,new DefaultThreadFactory("worker ")))
+                        new NioEventLoopGroup(0,new DefaultThreadFactory("worker")))
                 .childHandler(new ChannelInitializer<NioSocketChannel>() {
                     @Override
                     protected void initChannel(NioSocketChannel nioSocketChannel) {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
                         //完善handler名称方便调试
-                        pipeline.addLast(new LoggingHandler(LogLevel.DEBUG))
+                        pipeline.addLast(new LoggingHandler(LogLevel.INFO))
                                 //限流套件
                                 .addLast("shapingHandler",globalTrafficShapingHandler)
+                                //空闲检测Handler
+                                .addLast("IdleCheck",new ServerIdleCheckHandler())
                                 .addLast("frameDecoder",new OrderFrameDecoder())
                                 .addLast("frameEncoder",new OrderFrameEncoder())
                                 .addLast("orderProtocolEncoder",new OrderProtocolEncoder())
                                 .addLast("orderProtocolDecoder",new OrderProtocolDecoder())
                                 .addLast("metricsHandler",metricHandler)
                                 //牺牲一定的延迟，增加了系统的吞吐量，使用netty自带的FlushConsolidationHandler
-                                .addLast("flushEnhance",new FlushConsolidationHandler(5,true))
+                               .addLast("flushEnhance",new FlushConsolidationHandler(5,true))
 
                                 //业务处理handler,可能会很耗时,使用线程池来处理
                                 .addLast(businessThreadPool,new OrderServerProcessHandler());

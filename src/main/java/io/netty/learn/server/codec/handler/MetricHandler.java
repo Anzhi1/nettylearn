@@ -20,7 +20,7 @@ public class MetricHandler extends ChannelDuplexHandler {
 
         //在Console中输出，每5s一次
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry).build();
-        consoleReporter.start(5, TimeUnit.SECONDS);
+        consoleReporter.start(20, TimeUnit.SECONDS);
 
         //需要使用jmc来查看
 /*        JmxReporter jmxReporter = JmxReporter.forRegistry(metricRegistry).build();

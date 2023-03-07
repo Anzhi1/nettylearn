@@ -27,8 +27,7 @@ public class OrderServerProcessHandler extends SimpleChannelInboundHandler<Reque
         ResponseMessage responseMessage = new ResponseMessage();
         responseMessage.setMessageHeader(requestMessage.getMessageHeader());
         responseMessage.setMessageBody(operationResult);
-        //停3s,用于模拟业务处理耗时
-        Uninterruptibles.sleepUninterruptibly(3, TimeUnit.SECONDS);
+
 
         //加急式，每次写都flush
         //该if用于防止内存泄露,若没有else,则属于挖坑操作。
