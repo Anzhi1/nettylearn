@@ -7,6 +7,6 @@ import java.util.concurrent.TimeUnit;
 public class ClientIdleCheckHandler extends IdleStateHandler {
 
     public ClientIdleCheckHandler() {
-        super(0, 2, 0);
+        super(0, 5, 0);
     }
 }

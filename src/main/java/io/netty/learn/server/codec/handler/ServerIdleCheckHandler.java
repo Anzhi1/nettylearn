@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 public class ServerIdleCheckHandler extends IdleStateHandler {
     private final Logger log = LoggerFactory.getLogger(ServerIdleCheckHandler.class);
     public ServerIdleCheckHandler() {
-        super(5, 0, 0, TimeUnit.SECONDS);
+        super(10, 0, 0, TimeUnit.SECONDS);
     }
 
     @Override

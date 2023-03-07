@@ -8,6 +8,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.flush.FlushConsolidationHandler;
+import io.netty.handler.ipfilter.IpFilterRuleType;
+import io.netty.handler.ipfilter.IpSubnetFilterRule;
+import io.netty.handler.ipfilter.RuleBasedIpFilter;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
@@ -34,7 +37,8 @@ public class Server {
         UnorderedThreadPoolEventExecutor businessThreadPool = new UnorderedThreadPoolEventExecutor(10,new DefaultThreadFactory("business"));
         NioEventLoopGroup businessThreadPool2 = new NioEventLoopGroup(0,new DefaultThreadFactory("business2"));
         GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(new NioEventLoopGroup(),100*1024*1024,100*1024*1024);
-
+        IpSubnetFilterRule ipFilterRule = new IpSubnetFilterRule("127.1.0.1",16, IpFilterRuleType.REJECT);
+        RuleBasedIpFilter ruleBasedIpFilter = new RuleBasedIpFilter(ipFilterRule);
         //为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
@@ -49,6 +53,8 @@ public class Server {
                         ChannelPipeline pipeline = nioSocketChannel.pipeline();
                         //完善handler名称方便调试
                         pipeline.addLast(new LoggingHandler(LogLevel.INFO))
+                                //黑白名单
+                                .addLast("ipFilter", ruleBasedIpFilter)
                                 //限流套件
                                 .addLast("shapingHandler",globalTrafficShapingHandler)
                                 //空闲检测Handler
