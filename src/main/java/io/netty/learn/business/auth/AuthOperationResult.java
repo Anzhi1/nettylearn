@@ -10,6 +10,10 @@ public class AuthOperationResult extends OperationResult {
         this.passAuth = passAuth;
     }
 
+    public Boolean isPass(){
+        return passAuth;
+    }
+
     @Override
     public String toString() {
         return "AuthOperationResult{" +

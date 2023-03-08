@@ -1,5 +1,6 @@
 package io.netty.learn.client;
 
+import com.sun.security.jgss.AuthorizationDataEntry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -8,6 +9,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.learn.business.auth.AuthOperation;
 import io.netty.learn.business.order.OrderOperation;
 import io.netty.learn.client.codec.*;
 import io.netty.learn.client.codec.dispatcher.ClientIdleCheckHandler;
@@ -40,8 +42,10 @@ public class ClientV1 {
         ChannelFuture channelFuture = bootstrap.connect("127.0.0.1", 8090);
 
         channelFuture.sync();
+        AuthOperation authOperation = new AuthOperation("admin1","122");
         OrderOperation orderOperation = new OrderOperation(1001, "tudou");
         //future是异步执行的
+        channelFuture.channel().writeAndFlush(authOperation);
         channelFuture.channel().writeAndFlush(orderOperation);
 
         channelFuture.channel().closeFuture().get();

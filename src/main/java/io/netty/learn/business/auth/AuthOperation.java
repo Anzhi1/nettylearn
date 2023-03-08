@@ -21,4 +21,11 @@ public class AuthOperation extends Operation {
         return new AuthOperationResult(false);
     }
 
+    @Override
+    public String toString() {
+        return "AuthOperation{" +
+                "userName='" + userName + '\'' +
+                ", passWord='" + passWord + '\'' +
+                '}';
+    }
 }

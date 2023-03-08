@@ -18,6 +18,7 @@ import io.netty.learn.server.codec.OrderFrameDecoder;
 import io.netty.learn.server.codec.OrderFrameEncoder;
 import io.netty.learn.server.codec.OrderProtocolDecoder;
 import io.netty.learn.server.codec.OrderProtocolEncoder;
+import io.netty.learn.server.codec.handler.AuthHandler;
 import io.netty.learn.server.codec.handler.MetricHandler;
 import io.netty.learn.server.codec.handler.OrderServerProcessHandler;
 import io.netty.learn.server.codec.handler.ServerIdleCheckHandler;
@@ -40,6 +41,7 @@ public class Server {
         IpSubnetFilterRule ipFilterRule = new IpSubnetFilterRule("127.1.0.1",16, IpFilterRuleType.REJECT);
         RuleBasedIpFilter ruleBasedIpFilter = new RuleBasedIpFilter(ipFilterRule);
         //为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
+        AuthHandler authHandler = new AuthHandler();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
@@ -67,6 +69,8 @@ public class Server {
                                 //牺牲一定的延迟，增加了系统的吞吐量，使用netty自带的FlushConsolidationHandler
                                .addLast("flushEnhance",new FlushConsolidationHandler(5,true))
 
+                                //必须放在OrderProtocolDecoder之后，因为需要的是RequestMessage
+                                .addLast("authHandler",authHandler)
                                 //业务处理handler,可能会很耗时,使用线程池来处理
                                 .addLast(businessThreadPool,new OrderServerProcessHandler());
                     }
