@@ -34,14 +34,18 @@ public class Server {
 
         //可以共享的Handler metricHandler
         MetricHandler metricHandler = new MetricHandler();
-        //定义线程池
+        AuthHandler authHandler = new AuthHandler();
+
+        //定义线程池 为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
         UnorderedThreadPoolEventExecutor businessThreadPool = new UnorderedThreadPoolEventExecutor(10,new DefaultThreadFactory("business"));
         NioEventLoopGroup businessThreadPool2 = new NioEventLoopGroup(0,new DefaultThreadFactory("business2"));
+
+        //开始ip过滤功能
         GlobalTrafficShapingHandler globalTrafficShapingHandler = new GlobalTrafficShapingHandler(new NioEventLoopGroup(),100*1024*1024,100*1024*1024);
         IpSubnetFilterRule ipFilterRule = new IpSubnetFilterRule("127.1.0.1",16, IpFilterRuleType.REJECT);
         RuleBasedIpFilter ruleBasedIpFilter = new RuleBasedIpFilter(ipFilterRule);
-        //为什么NioEventLoopGroup会慢？只用了一个线程去处理，所以一般都用别的
-        AuthHandler authHandler = new AuthHandler();
+
+
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap
                 .channel(NioServerSocketChannel.class)
