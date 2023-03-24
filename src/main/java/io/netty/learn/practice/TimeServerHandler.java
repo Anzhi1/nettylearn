@@ -27,9 +27,8 @@ public class TimeServerHandler implements Runnable {
             String body = null;
             while (true) {
                 body = in.readLine();
-                System.out.println("获取到了body"+body);
                 if (body == null) {
-                    System.out.println("获取到的body为空");
+                    System.out.println("获取到的body为空,结束");
                     break;
                 }
                 System.out.println("The time serer receiver order : " + body);
