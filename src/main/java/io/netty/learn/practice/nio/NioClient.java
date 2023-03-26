@@ -1,7 +1,7 @@
 package io.netty.learn.practice.nio;
 
-public class NioServer {
-    public static void main(String[] args) {
+public class NioClient {
+    public static void main(String[] args){
         int port = 8080;
         if (args != null && args.length > 0) {
             try {
@@ -10,8 +10,6 @@ public class NioServer {
                 //采用默认值
             }
         }
-        MultiplexerTimeServer timeServer = new MultiplexerTimeServer(port);
-        new Thread(timeServer,"Nio-MultiplexerTimeServer-001").start();;
-
+        new Thread(new TimeClientHandler("127.0.0.1",port),"TimeClient-").start();
     }
 }
