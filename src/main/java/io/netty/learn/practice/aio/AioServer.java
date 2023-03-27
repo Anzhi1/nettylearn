@@ -10,6 +10,8 @@ public class AioServer {
                 //采用默认值
             }
         }
+        AsyncTimeServerHandler timeServer = new AsyncTimeServerHandler(port);
+        new Thread(timeServer,"AIO-AsyncTimeServer").start();
     }
 
 }
