@@ -38,7 +38,8 @@ public class MultiplexerTimeServer implements Runnable {
             serverSocketChannel.socket().bind(new InetSocketAddress(port), 1024);
             //将serverSocketChannel注册到Selector上，并监听accept事件
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            System.out.println("The time server is start in port:" + port);
+
+            log.info("The time server is start in port:" + port);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);

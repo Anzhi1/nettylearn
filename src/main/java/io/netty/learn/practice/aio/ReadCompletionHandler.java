@@ -30,7 +30,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, ByteBuf
         attachment.get(body);
         try {
             String req = new String(body,"UTF-8");
-            log.info("the time server receive order{}",req);
+            log.info("the time server receive order {}",req);
             String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(req) ? new Date(System.currentTimeMillis()).toString()
                     : "BAD ORDER";
             doWrite(currentTime);
