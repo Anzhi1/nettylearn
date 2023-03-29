@@ -1,10 +1,14 @@
 package io.netty.learn.server.codec.handler;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 public class TimeServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -17,12 +21,17 @@ public class TimeServerHandler extends ChannelInboundHandlerAdapter {
         ByteBuf byteBuf =(ByteBuf) msg;
         byte[] req = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(req);
-        String body = "";
-        super.channelRead(ctx, msg);
+        String body = new String(req, StandardCharsets.UTF_8).substring(0,req.length-System.getProperty("line.separator").length());
+        log.info("the time server receive order : {},the counter is {}",body,++counter);
+        String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : "BAD ORDER";
+        currentTime=currentTime+System.getProperty("line.separator");
+        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+        ctx.writeAndFlush(resp);
+
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
+        ctx.close();
     }
 }
