@@ -9,11 +9,11 @@ public final class JsonUtil {
     public JsonUtil() {
     }
 
-    public static <T> T fromJson(String jsonStr, Class<T> clazz){
+    public static <T> T fromJson(String jsonStr, Class<T> clazz) {
         return GSON.fromJson(jsonStr, clazz);
     }
 
-    public static String toJson(Object object){
+    public static String toJson(Object object) {
         return GSON.toJson(object);
 
     }
