@@ -24,6 +24,7 @@ public class TimeServerHandler extends ChannelInboundHandlerAdapter {
         String body = (String) msg;
         log.info("the time server receive order : {},the counter is {}", body, ++counter);
         String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : "BAD ORDER";
+        //System.getProperty(“line.separator”)用来返回当前操作系统的行结束符。
         currentTime = currentTime + System.getProperty("line.separator");
         ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
         ctx.writeAndFlush(resp);
