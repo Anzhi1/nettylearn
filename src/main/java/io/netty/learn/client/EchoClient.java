@@ -1,6 +1,8 @@
 package io.netty.learn.client;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -8,18 +10,17 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 import io.netty.learn.client.codec.handler.EchoClientHandler;
-import io.netty.learn.client.codec.handler.TimeClientHandler;
 
-public class TimeClient {
+public class EchoClient {
     public void connect(int port, String host) throws Exception {
         //配置客户端NIO线程组
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         try {
+            ByteBuf delimiter = Unpooled.copiedBuffer("$_".getBytes());
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(eventLoopGroup)
                     .channel(NioSocketChannel.class)
@@ -28,9 +29,8 @@ public class TimeClient {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
                             socketChannel.pipeline()
-                                    .addLast(new LineBasedFrameDecoder(1024))
+                                    .addLast(new DelimiterBasedFrameDecoder(1024,delimiter))
                                     .addLast(new StringDecoder())
-                                    .addLast(new LoggingHandler(LogLevel.INFO))
                                     .addLast("EchoClientHandler", new EchoClientHandler());
 
                         }
@@ -57,7 +57,4 @@ public class TimeClient {
         }
         new TimeClient().connect(port, "127.0.0.1");
     }
-
 }
-
-
