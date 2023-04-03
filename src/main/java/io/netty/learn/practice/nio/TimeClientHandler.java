@@ -1,6 +1,5 @@
 package io.netty.learn.practice.nio;
 
-import io.netty.learn.practice.TimeServerHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

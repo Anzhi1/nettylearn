@@ -1,4 +1,4 @@
-package io.netty.learn.practice;
+package io.netty.learn.practice.bio;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
