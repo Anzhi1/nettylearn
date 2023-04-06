@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class HttpFileServer {
     private static final Logger log = LoggerFactory.getLogger(HttpFileServer.class);
 
-    private static final String defaultUrl = "/users/until";
+    private static final String defaultUrl = "/";
 
     public void run(final int port, final String url) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(0, new DefaultThreadFactory("bossGroup"));
@@ -43,7 +43,7 @@ public class HttpFileServer {
                                     .addLast("http-encoder", new HttpResponseEncoder())
                                     //支持异步发送大的码流(例如大的文件传输)，但不占用过多的内存，防止发生Java内存溢出错误
                                     .addLast("http-chunked", new ChunkedWriteHandler())
-                                    .addLast("http-server_handler",new HttpFileServerHandler(url));
+                                    .addLast("http-server-handler",new HttpFileServerHandler(url));
                         }
                     });
 

@@ -51,6 +51,7 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
         }
         final String uri = request.uri();
         final String path = sanitizedUrl(uri);
+        log.info("path的值为{}",path);
         if(path==null){
             sendError(channelHandlerContext,HttpResponseStatus.FORBIDDEN);
         }
@@ -91,13 +92,15 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
         channelHandlerContext.write(response);
         ChannelFuture sendFileFuture;
         sendFileFuture = channelHandlerContext.write(new ChunkedFile(randomAccessFile, 0, fileLength, 8192), channelHandlerContext.newProgressivePromise());
+
+        //为sendFileFuture增加GenericFutureListener，如果发送完成，打印"Transfer complete"
         sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
             @Override
             public void operationProgressed(ChannelProgressiveFuture channelProgressiveFuture, long progress, long total) throws Exception {
                 if (total < 0) {
-                    log.error("Transfer progress{}", progress);
+                    log.error("Transfer progress a {}", progress);
                 } else {
-                    log.error("Transfer progross{}", progress);
+                    log.error("Transfer progress b {}", progress);
                 }
             }
 
@@ -106,7 +109,11 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
                 log.info("Transfer completed");
             }
         });
+        //由于使用chunked编码，最后需要发送一个编码结束的空消息体，将LastHttpContent的EMPTY_LAST_CONTENT发送到缓冲区中，标识所有
+        //的消息体已经发送完成，同时调用flush方法将之前在发送缓冲区的消息刷新到SocketChannel中发送给对方。
         ChannelFuture lastContentFuture = channelHandlerContext.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+
+        //如果是非KeepAlive的，最后一包消息发送完成之后，服务端要主动关闭连接
         if (!isKeepAlive(request)) {
             lastContentFuture.addListener(ChannelFutureListener.CLOSE);
         }
@@ -134,6 +141,7 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
             log.error("url不符合");
             return null;
         }
+        log.info("替换前的uri为{}",uri);
         uri = uri.replace('/', File.separatorChar);
         if (uri.contains(File.separator + '.')
                 || uri.contains('.' + File.separator)
@@ -143,7 +151,7 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
             log.error("url不符合");
             return null;
         }
-        return System.getProperty("user.dir") + File.separator + uri;
+        return System.getProperty("user.dir")  + uri;
 
     }
     private static void sendListing(ChannelHandlerContext ctx,File dir){
@@ -176,9 +184,13 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
             buf.append("</a></li>\r\n");
         }
         buf.append("</ul></body></html>\r\n");
+        //分配对应消息的缓冲对象
         ByteBuf buffer= Unpooled.copiedBuffer(buf,CharsetUtil.UTF_8);
+        //将对象写进response中
         response.content().writeBytes(buffer);
+        //释放缓冲区
         buffer.release();
+        //将响应消息发送到缓冲区并刷新到SocketChannel中
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
     private static void sendRedirect(ChannelHandlerContext ctx,String newUri){
@@ -191,11 +203,13 @@ public class HttpFileServerHandler extends SimpleChannelInboundHandler<FullHttpR
         FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1,status,
                 Unpooled.copiedBuffer("Failure:"+status.toString()+"\r\n", CharsetUtil.UTF_8));
         response.headers().set(HttpHeaderNames.CONTENT_TYPE,"text/plain; charset=UTF-8");
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     private static void setContentTypeHeader(HttpResponse response,File file){
-        MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
-        String contentType = mimetypesFileTypeMap.getContentType("a.txt");
+        MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE,
+                mimeTypesMap.getContentType(file.getPath()));
 
     }
 
