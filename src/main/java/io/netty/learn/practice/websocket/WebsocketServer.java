@@ -35,7 +35,7 @@ public class WebsocketServer {
                                     .addLast("http-codec", new HttpServerCodec())
                                     .addLast("aggregator", new HttpObjectAggregator(65536))
                                     .addLast("http-chunked", new ChunkedWriteHandler())
-                                    .addLast();
+                                    .addLast("web-socket-handler",new WebSocketServerHandler());
 
                         }
                     });
