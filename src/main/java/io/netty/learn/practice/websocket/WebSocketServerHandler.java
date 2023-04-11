@@ -56,6 +56,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
             log.error("webSocketServerHandShaker初始化失败");
             WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
         } else {
+            //构造握手响应消息返回给客户端，同时将WebSocket相关的编码和解码类动态添加到ChannelPipeline中，用于WebSocket消息的编解码
             webSocketServerHandshaker.handshake(ctx.channel(), request);
         }
     }
@@ -69,6 +70,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
         }
         //判断是否为ping消息
         else if (frame instanceof PingWebSocketFrame) {
+            log.info("返回pong指令{}",frame.content());
             ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
             return;
         }

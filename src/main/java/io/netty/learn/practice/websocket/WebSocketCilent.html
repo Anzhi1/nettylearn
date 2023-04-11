@@ -1,0 +1,53 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    Netty Websocket Time Client
+</head>
+<br>
+<body>
+<br>
+<script type="text/javascript">
+            var socket;
+            if(!window.WebSocket){
+                window.WebSocket = window.MozWebSocket;
+            }
+            if(window.WebSocket){
+                socket = new WebSocket("ws://localhost:8080/websocket");
+                socket.onmessage = function(event){
+                    var ta = document.getElementById('responseText');
+                    ta.value = "";
+                    ta.value=event.data;
+                };
+                socket.onopen = function(event){
+                    var ta = document.getElementById('responseText');
+                    ta.value = "打开websocket正常，浏览器支持websocket";
+                };
+                socket.onclose = function(event){
+                    var ta = document.getElementById('responseText');
+                    ta.value="";
+                    ta.value="Web Socket 关闭";
+                };
+            }else{
+                alert("抱歉，你的浏览器不支持websocket");
+            }
+
+            function send(message){
+                if(!window.WebSocket){return ; }
+                if(socket.readyState == WebSocket.OPEN){
+                    socket.send(message);
+                }else{
+                    alert("websocket连接建立失败");
+                }
+            }
+
+</script>
+<form onsubmit="return false;">
+    <br>
+    <br>
+    <input type="button" value="发送Websocket 请求消息" onclick="send(this.form.message.value)"/>
+    <hr color="blue"/>
+    <h3>服务端返回的应答消息</h3>
+    <textarea id="responseText" style="width:500px;height:300px;"></textarea>
+</form>
+</body>
+</html>
