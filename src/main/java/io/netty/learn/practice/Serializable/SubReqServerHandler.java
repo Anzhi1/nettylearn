@@ -11,10 +11,14 @@ public class SubReqServerHandler extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(SubReqServerHandler.class);
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        log.info("server handler channelRead in");
+
         SubscribeReq req = (SubscribeReq) msg;
         if("test".equals(req.getUserName())){
             log.info("Service accept {}",req);
             ctx.writeAndFlush(getResp(req.getSubReqId()));
+        }else{
+            log.info("userName doesn't match");
         }
 
     }

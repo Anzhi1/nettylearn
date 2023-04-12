@@ -11,6 +11,7 @@ public class SubReqClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         for(int i =0 ; i<10;i++){
+            log.info("begin to send{}",i);
             ctx.write(getReq(i));
         }
         ctx.flush();
@@ -23,6 +24,7 @@ public class SubReqClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        log.info("client channelReadComplete");
         ctx.flush();
     }
 
