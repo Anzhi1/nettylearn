@@ -9,8 +9,10 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.oio.OioServerSocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.logging.LogLevel;
@@ -19,12 +21,12 @@ import io.netty.learn.server.codec.handler.EchoServerHandler;
 
 public class EchoServer {
     public void bind(int port) throws Exception{
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new OioEventLoopGroup();
+        EventLoopGroup workerGroup = new OioEventLoopGroup();
         try{
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup,workerGroup)
-                    .channel(NioServerSocketChannel.class)
+                    .channel(OioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG,100)
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChannelInitializer<SocketChannel>() {

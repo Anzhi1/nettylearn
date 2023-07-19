@@ -19,13 +19,40 @@ JDK的线程池维护一个消息队列和N个活跃线程对消息队列中的�
 中的；在写入数据时，写入到缓冲区中。任何时候访问NIO中的数据，都是通过缓冲区进行操作。
 
 
+Netty中的OIO即BIO，现已不支持。
+Netty有多种NIO实现
+
+Common: NioEventLoopGroup/NioEventLoop/NioServerSocketChannel/NioSocketChannel
+Linux:EpollEventLoopGroup/EpollEventLoop/EpollServerSocketChannel/EpollSocketChannel
+macOS/BSD:KQueueEventLoopGroup/KQueueEventLoop/KQueueServerSocketChannel/KQueueSocketChannel
+
+ServerBootStrap.channel 通过泛型+反射+工厂实现I/O模式的自定义切换
+
+Netty对Reactor的支持
+Reactor是一种开发模式，模式的核心流程：注册感兴趣的事件->扫描是否有感兴趣的事件发生->事件发生后做出相应的处理
+
+ServerSocketChannel只监听OP_ACCEPT
+服务器端SocketChannel只监听OP_WRITE OP_READ
+next()用到了策略模式，里面有选择器
+
+Reactor单线程
+Reactor多线程
+主从Reactor多线程
+
+Netty的main reacotr大多并不能用到一个线程组，只能用到线程组中的一个 why?
+因为服务器一般只绑定一个地址一个端口
+
+Netty给Channel分配NIO eventloop的规则是什么
 TCP是个“流”协议，所谓流，就是没有界限的一串数据，其间没有分界线。TCP底层并不了解上层业务数据的具体含义，它会根据TCP缓冲区的实际情况进行
 包的划分，所以在业务上认为，一个完整的包可能会被TCP拆分成多个包进行发送，也有可能把多个小的包封装成一个大的数据包发送，这就是所谓的TCP粘包
 和拆包问题。
 TCP发生粘包/拆包的原因有如下三个
-1.应用程序write写入的字节大小大于套接字发送缓冲区的大小;
+1.应用程序write写入的字节大小大于套接字发送缓冲区的大小或者发送的数据大于协议的MTU(必须拆包)
 2.进行MSS大小的TCP分段;
 3.以太网帧的payload大于MTU进行IP分片.
+UDP没有半包粘包问题
+
+处理半包粘包问题的核心：找出消息的边界
 
 
 LineBasedFrameDecoder的工作原理是它依次便利ByteBuf中的可读字节，判断看是否有"\n"或者"\r\n",如果有，就以此位置为结束位置，从可读索引到
@@ -37,11 +64,13 @@ StringDecoder的功能非常简单，就是将接收到的对象转换为字符�
 
 TCP以流的方式进行数据传输，上层的应用协议为了对消息进行区分，往往采用以下四种方式
 
-1.消息长度固定，累计读取到长度总和为定长LEN的报文后，就认为读取到了一个完整的消息；将计数器置位，重新开始读取下一个数据报；
+1.消息长度固定，累计读取到长度总和为定长LEN的报文后，就认为读取到了一个完整的消息；将计数器置位，重新开始读取下一个数据报；  简单，空间浪费
+FixedLengthFrameDecoder
 2.将回车换行符作为消息结束符，例如FTP协议，这种方式在文本协议中应用比较广泛
-3.将特殊的分隔符作为消息的结束标志，回车换行符就是一种特殊的结束分隔符
-4.通过在消息头中定义长度字段来标识消息的总长度。
-
+2.1.将特殊的分隔符作为消息的结束标志，回车换行符就是一种特殊的结束分隔符    需要转义
+DelimiterBasedFrameDecoder
+3.通过在消息头中定义长度字段来标识消息的总长度。  用得较多，长度理论上有限制
+LengthFieldBasedFrameDecoder 
 Netty对上面四种应用做了统一的抽象，提供了4种解码器来解决对应的问题。
 
 Http协议的弊端
@@ -52,6 +81,9 @@ Http协议的弊端
 Websocket介绍
 Websocket协议是基于TCP的一种新的网络协议，实现了浏览器与服务器之间进行全双工通信(full-duplex)的网络技术，即服务器主动发送消息给客户端。
 在Websocket中，浏览器和服务器只需要完成一次握手，两者之间就可以创建持久性的连接，并进行双向数据传输。
+
+
+
 
 
 
