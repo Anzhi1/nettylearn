@@ -35,6 +35,7 @@ ServerSocketChannel只监听OP_ACCEPT
 服务器端SocketChannel只监听OP_WRITE OP_READ
 next()用到了策略模式，里面有选择器
 
+
 Reactor单线程
 Reactor多线程
 主从Reactor多线程
@@ -72,6 +73,11 @@ DelimiterBasedFrameDecoder
 3.通过在消息头中定义长度字段来标识消息的总长度。  用得较多，长度理论上有限制
 LengthFieldBasedFrameDecoder 
 Netty对上面四种应用做了统一的抽象，提供了4种解码器来解决对应的问题。
+
+ByteToMessageDecoder中的cumulation使用了策略模式，
+decode使用了模板模式
+
+一次解码器
 
 Http协议的弊端
 (1)http协议为半双工协议。半双工协议指数据可以在客户端和服务端两个方向是传输，但是不能同时传输，即同一时刻只能由一个方向上的数据传输
