@@ -31,7 +31,7 @@ public class TimeServerHandler implements Runnable {
                     System.out.println("获取到的body为空,结束");
                     break;
                 }
-                System.out.println("The time serer receiver order : " + body);
+                System.out.println("The time server receiver order : " + body);
                 currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : "BAD ORDER";
                 out.println(currentTime);
             }
