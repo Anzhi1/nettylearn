@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tomcat.learn.Servlet.HelloServlet;
-import tomcat.learn.Servlet.IndexServlet;
+import tomcat.learn.servlet.HelloServlet;
+import tomcat.learn.servlet.IndexServlet;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,7 +28,7 @@ public class HttpConnector implements HttpHandler, AutoCloseable {
     public HttpConnector() throws IOException, ServletException {
         //创建ServletContext
         this.servletContext = new ServletContextImpl();
-        //初始化Servlet
+        //初始化Servlet和Filter
         this.servletContext.initialize(List.of(IndexServlet.class, HelloServlet.class));
 
         String host = "0.0.0.0";
@@ -40,9 +40,11 @@ public class HttpConnector implements HttpHandler, AutoCloseable {
     }
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        var adapter = new HttpExchangeAdapter(exchange);
-        var request = new HttpServletRequestImpl(adapter);
-        var response = new HttpServletResponseImpl(adapter);
+        //HttpExchange基于HTTP server,与Servlet
+        //通过适配器模式将HttpExchange转换为HttpServletRequest和HttpServletResponse
+        HttpExchangeAdapter adapter = new HttpExchangeAdapter(exchange);
+        HttpServletRequestImpl request = new HttpServletRequestImpl(adapter);
+        HttpServletResponseImpl response = new HttpServletResponseImpl(adapter);
         //process
         try {
             this.servletContext.process(request, response);

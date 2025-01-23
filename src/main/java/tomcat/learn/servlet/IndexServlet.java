@@ -1,4 +1,4 @@
-package tomcat.learn.Servlet;
+package tomcat.learn.servlet;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;

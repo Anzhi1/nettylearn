@@ -1,10 +1,16 @@
 package tomcat.learn;
 
 import jakarta.servlet.*;
+import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.descriptor.JspConfigDescriptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import tomcat.learn.filter.HelloFilter;
+import tomcat.learn.filter.LogFilter;
+import tomcat.learn.mapping.FilterMapping;
 import tomcat.learn.mapping.ServletMapping;
 import tomcat.learn.utils.AnnoUtils;
 
@@ -17,20 +23,29 @@ import java.net.URL;
 import java.util.*;
 
 public class ServletContextImpl implements ServletContext {
+
+    private static final Logger log = LoggerFactory.getLogger(ServletContextImpl.class);
     Map<String, ServletRegistrationImpl> servletRegistrations = new HashMap<>();
     Map<String, Servlet> nameToServlets = new HashMap<>();
     List<ServletMapping> servletMappings = new ArrayList<>();
 
+    Map<String, FilterRegistrationImpl> filterRegistrations = new HashMap<>();
+    Map<String, Filter> nameToFilters = new HashMap<>();
+    List<FilterMapping> filterMappings = new ArrayList<>();
+
     public void initialize(List<Class<?>> servletClasses) throws ServletException {
         //依次添加每个Servlet
-        for(Class<?> c :servletClasses){
+        for (Class<?> c : servletClasses) {
             //获取@WebServlet注解
             WebServlet ws = c.getAnnotation(WebServlet.class);
-            Class<? extends Servlet> clazz = (Class<? extends Servlet>) c;
-            // 创建一个ServletRegistration.Dynamic:
-            ServletRegistration.Dynamic registration = this.addServlet(AnnoUtils.getServletName(clazz), clazz);
-            registration.addMapping(AnnoUtils.getServletUrlPatterns(clazz));
-            registration.setInitParameters(AnnoUtils.getServletInitParams(clazz));
+            if(ws!=null){
+                Class<? extends Servlet> clazz = (Class<? extends Servlet>) c;
+                // 创建一个ServletRegistration.Dynamic:
+                ServletRegistration.Dynamic registration = this.addServlet(AnnoUtils.getServletName(clazz), clazz);
+                registration.addMapping(AnnoUtils.getServletUrlPatterns(clazz));
+                registration.setInitParameters(AnnoUtils.getServletInitParams(clazz));
+            }
+
         }
         //实例化Servlet:
         for (String name : this.servletRegistrations.keySet()) {
@@ -43,30 +58,74 @@ public class ServletContextImpl implements ServletContext {
             registration.initialized = true;
         }
 
+        initFilters(List.of(HelloFilter.class, LogFilter.class));
+
     }
+
+    public void initFilters(List<Class<?>> filterClasses) throws ServletException {
+        for (Class<?> c : filterClasses) {
+            //获取WebFilter注解:
+            WebFilter wf = c.getAnnotation(WebFilter.class);
+            //添加Filter
+            if (wf != null) {
+                Class<? extends Filter> clazz = (Class<? extends Filter>) c;
+                FilterRegistration.Dynamic registration = this.addFilter(AnnoUtils.getFilterName(clazz), clazz);
+                registration.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, AnnoUtils.getFilterUrlPatterns(clazz));
+                registration.setInitParameters(AnnoUtils.getFilterInitParams(clazz));
+            }
+        }
+        //init filters
+        for(String name : this.filterRegistrations.keySet()){
+            var registration = this.filterRegistrations.get(name);
+            //调用Filter.init()方法
+            registration.filter.init(registration.getFilterConfig());
+            this.nameToFilters.put(name, registration.filter);
+            //将Filter定义的每个URL映射编译为正则表达式;
+            for(String urlPattern : registration.getUrlPatternMappings()){
+                this.filterMappings.add(new FilterMapping(urlPattern, registration.filter));
+            }
+        }
+
+    }
+
     public void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         //请求路径
         String path = request.getRequestURI();
         //搜索Servlet
         Servlet servlet = null;
-        for(ServletMapping mapping : this.servletMappings){
-            if(mapping.matches(path)){
+        for (ServletMapping mapping : this.servletMappings) {
+            if (mapping.matches(path)) {
                 //路径匹配
                 servlet = mapping.servlet;
                 break;
             }
         }
-        if(servlet == null){
+        if (servlet == null) {
             //未匹配到任何Servlet显示404 Not Found
             PrintWriter pw = response.getWriter();
             pw.write("<h1>404 Not Found</h1><p>No mapping for URL: " + path + "</p>");
             pw.close();
             return;
         }
-        //由Servlet继续处理请求
-        servlet.service(request,response);
+        //查找Filter
+        List<Filter> enabledFilters = new ArrayList<>();
+        for(FilterMapping mapping : this.filterMappings){
+            if(mapping.matches(path)){
+                enabledFilters.add(mapping.filter);
+            }
+        }
+        Filter[] filters = enabledFilters.toArray(Filter[]::new);
+        log.info("process {} by filter {}, servlet {}", path, Arrays.toString(filters), servlet);
+        FilterChain chain = new FilterChainImpl(filters, servlet);
+        try {
+            chain.doFilter(request, response);
+        }catch (ServletException e){
+            log.error(e.getMessage());
+        }
+
 
     }
+
     @Override
     public String getContextPath() {
         return "";
@@ -245,18 +304,30 @@ public class ServletContextImpl implements ServletContext {
     }
 
     @Override
-    public FilterRegistration.Dynamic addFilter(String s, String s1) {
-        return null;
+    public FilterRegistration.Dynamic addFilter(String name, String className) {
+        try {
+            return addFilter(name, (Class<? extends Filter>) Class.forName(className));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public FilterRegistration.Dynamic addFilter(String s, Filter filter) {
-        return null;
+    public FilterRegistration.Dynamic addFilter(String name, Filter filter) {
+        var registration = new FilterRegistrationImpl(this, name, filter);
+        this.filterRegistrations.put(name, registration);
+        return registration;
     }
 
     @Override
-    public FilterRegistration.Dynamic addFilter(String s, Class<? extends Filter> aClass) {
-        return null;
+    public FilterRegistration.Dynamic addFilter(String name, Class<? extends Filter> clazz) {
+        try {
+            return addFilter(name, clazz.newInstance());
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
